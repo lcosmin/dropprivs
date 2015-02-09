@@ -6,14 +6,16 @@
 
 #include <sys/types.h>
 #include <pwd.h>
+#include <grp.h>
 
+#include "config.h"
 
 const char* user = NULL;
-const char* group = NULL;
-int command_index = 0;
+const char* cwd = NULL;
+int verbose = 0;
 
 
-int get_user_uid(const char* user, uid_t* uid)
+int get_user_uid_gid(const char* user, uid_t* uid, gid_t* gid)
 {
     struct passwd* pwd = NULL;
 
@@ -25,6 +27,7 @@ int get_user_uid(const char* user, uid_t* uid)
         if (!strcmp(user, pwd->pw_name))
         {
             *uid = pwd->pw_uid;
+            *gid = pwd->pw_gid;
             return 0;
         }
     }
@@ -33,19 +36,88 @@ int get_user_uid(const char* user, uid_t* uid)
 }
 
 
+int set_user_privileges(const char* user, uid_t uid, gid_t gid)
+{
+
+#if HAVE_INITGROUPS
+    if (initgroups(user, gid) != 0)
+    {
+        perror("initgroups");
+        return -1;
+    }
+#endif
+
+#if HAVE_SETRESGID
+    if (setresgid(gid, gid, gid) < 0)
+    {
+        perror("setresgid");
+        return -1;
+    }
+#elif HAVE_SETREGID
+    if (setregid(gid, gid) < 0)
+    {
+        perror("setregid");
+        return -1;
+    }
+#else
+    if (setgid(gid) != 0)
+    {
+        perror("setgid");
+        return -1;
+    }
+#endif
+
+
+#if HAVE_SETRESUID
+    if (setresuid(uid, uid, uid) < 0)
+    {
+        perror("setresuid");
+        return -1;
+    }
+#elif HAVE_SETREUID
+    if (setreuid(uid, uid) < 0)
+    {
+        perror("setreuid");
+        return -1;
+    }
+#else
+    if (setuid(uid) != 0)
+    {
+        perror("setuid");
+        return -1;
+    }
+#endif
+
+    /* check if we succeeded */
+    if (getuid() != uid)
+    {
+        fprintf(stderr, "failed to set UID!\n");
+        return -1;
+    }
+
+    if (getgid() != gid)
+    {
+        fprintf(stderr, "failed to set GID!\n");
+        return -1;
+    }
+
+    return 0;
+}
+
 void usage(const char* progname)
 {
-    printf("USAGE: %s [-u user] [-g group] -- command\n", progname);
+    printf("USAGE: %s [-u user] [-d directory] [-v] -- command\n", progname);
     exit(0);
 }
 
 
 int main(int argc, char** argv)
 {
-    int c, i;
-    uid_t uid = 0;
+    int c;
+    uid_t uid;
+    gid_t gid;
 
-    while ((c = getopt(argc, argv, "u:g:h")) != -1)
+    while ((c = getopt(argc, argv, "u:d:hv")) != -1)
     {
         switch (c)
         {
@@ -53,8 +125,12 @@ int main(int argc, char** argv)
                 user = optarg;
                 break;
 
-            case 'g':
-                group = optarg;
+            case 'd':
+                cwd = optarg;
+                break;
+
+            case 'v':
+                verbose = 1;
                 break;
 
             case 'h':
@@ -67,23 +143,48 @@ int main(int argc, char** argv)
     argc -= optind;
     argv += optind;
 
-    if (user)
+    if (!user)
     {
-        if (get_user_uid(user, &uid) < 0)
+        fprintf(stderr, "no user name specified!\n");
+        return 1;
+    }
+
+    if (!argc)
+    {
+        fprintf(stderr, "no command specified!\n");
+        return 1;
+    }
+
+    if (get_user_uid_gid(user, &uid, &gid) < 0)
+    {
+        fprintf(stderr, "user %s not found\n", user);
+        return 2;
+    }
+
+    if (verbose)
+        printf("switching to user %s (uid %u, gid %u)\n", user, uid, gid);
+
+    if (set_user_privileges(user, uid, gid) < 0)
+    {
+        return 3;
+    }
+
+    if (cwd)
+    {
+        if (verbose)
+            printf("changing path to %s\n", cwd);
+            
+        if (chdir(cwd) < 0)
         {
-            printf("user not found\n");
-        }
-        else
-        {
-            printf("user: %s (uid: %u)\n", user, uid);
+            perror("chdir");
+            return 4;
         }
     }
 
-    printf("group: %s\n", group);
-
-    for (i = 0; i < argc; i++)
+    if (execvp(argv[0], argv) < 0)
     {
-        printf("command: %s\n", argv[i]);
+        perror("execvp");
+        return 4;
     }
 
     return 0;
