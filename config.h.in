@@ -1,0 +1,10 @@
+#ifndef __CONFIG_H__
+#define __CONFIG_H__
+
+#cmakedefine HAVE_SETRESGID 1
+#cmakedefine HAVE_SETREGID 1
+#cmakedefine HAVE_SETRESUID 1
+#cmakedefine HAVE_SETREUID 1
+#cmakedefine HAVE_INITGROUPS 1
+
+#endif
