@@ -6,5 +6,6 @@
 #cmakedefine HAVE_SETRESUID 1
 #cmakedefine HAVE_SETREUID 1
 #cmakedefine HAVE_INITGROUPS 1
+#cmakedefine HAVE_GETPWNAM 1
 
 #endif

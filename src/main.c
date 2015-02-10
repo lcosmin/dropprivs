@@ -22,7 +22,16 @@ int get_user_uid_gid(const char* user, uid_t* uid, gid_t* gid)
 
     assert(user);
     assert(uid);
+    assert(gid);
 
+#if HAVE_GETPWNAM
+    if ((pwd = getpwnam(user)) != NULL)
+    {
+        *uid = pwd->pw_uid;
+        *gid = pwd->pw_gid;
+        rc = 0;
+    }
+#else
     while ((pwd = getpwent()) != NULL)
     {
         if (!strcmp(user, pwd->pw_name))
@@ -33,17 +42,18 @@ int get_user_uid_gid(const char* user, uid_t* uid, gid_t* gid)
             break;
         }
     }
-
     endpwent();
+#endif
     return rc;
 }
 
 
 int set_user_privileges(const char* user, uid_t uid, gid_t gid)
 {
+    assert(user);
 
-  if (verbose)
-      printf("Switching to user %s (uid %u, gid %u)\n", user, uid, gid);
+    if (verbose)
+        printf("Switching to user %s (uid %u, gid %u)\n", user, uid, gid);
 
 #if HAVE_INITGROUPS
     if (initgroups(user, gid) != 0)

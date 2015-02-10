@@ -8,8 +8,9 @@ check_function_exists(setregid HAVE_SETREGID)
 check_function_exists(setresuid HAVE_SETRESUID)
 check_function_exists(setreuid HAVE_SETREUID)
 check_function_exists(initgroups HAVE_INITGROUPS)
+check_function_exists(getpwnam HAVE_GETPWNAM)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
-add_executable(runas src/main.c)
+add_executable(dropprivs src/main.c)
