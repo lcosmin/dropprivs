@@ -18,6 +18,7 @@ int verbose = 0;
 int get_user_uid_gid(const char* user, uid_t* uid, gid_t* gid)
 {
     struct passwd* pwd = NULL;
+    int rc = -1;
 
     assert(user);
     assert(uid);
@@ -28,11 +29,13 @@ int get_user_uid_gid(const char* user, uid_t* uid, gid_t* gid)
         {
             *uid = pwd->pw_uid;
             *gid = pwd->pw_gid;
-            return 0;
+            rc = 0;
+            break;
         }
     }
 
-    return -1;
+    endpwent();
+    return rc;
 }
 
 
