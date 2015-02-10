@@ -107,9 +107,9 @@ int set_user_privileges(const char* user, uid_t uid, gid_t gid)
     return 0;
 }
 
-void usage(const char* progname)
+void usage()
 {
-    printf("USAGE: %s [-u user] [-d directory] [-v] -- command\n", progname);
+    printf("USAGE: dropprivs [-u user] [-d directory] [-v] -- command\n");
     exit(0);
 }
 
@@ -139,7 +139,7 @@ int main(int argc, char** argv)
             case 'h':
             case '?':
             default:
-                usage(argv[0]);
+                usage();
         }
     }
 
