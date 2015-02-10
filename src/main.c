@@ -146,6 +146,12 @@ int main(int argc, char** argv)
     argc -= optind;
     argv += optind;
 
+    if (getuid() != 0)
+    {
+        fprintf(stderr, "This program needs to be run as root!\n");
+        return 1;
+    }
+
     if (!user)
     {
         fprintf(stderr, "No user name specified!\n");
