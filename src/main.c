@@ -39,6 +39,9 @@ int get_user_uid_gid(const char* user, uid_t* uid, gid_t* gid)
 int set_user_privileges(const char* user, uid_t uid, gid_t gid)
 {
 
+  if (verbose)
+      printf("Switching to user %s (uid %u, gid %u)\n", user, uid, gid);
+
 #if HAVE_INITGROUPS
     if (initgroups(user, gid) != 0)
     {
@@ -145,24 +148,21 @@ int main(int argc, char** argv)
 
     if (!user)
     {
-        fprintf(stderr, "no user name specified!\n");
+        fprintf(stderr, "No user name specified!\n");
         return 1;
     }
 
     if (!argc)
     {
-        fprintf(stderr, "no command specified!\n");
+        fprintf(stderr, "No command specified!\n");
         return 1;
     }
 
     if (get_user_uid_gid(user, &uid, &gid) < 0)
     {
-        fprintf(stderr, "user %s not found\n", user);
+        fprintf(stderr, "User %s not found\n", user);
         return 2;
     }
-
-    if (verbose)
-        printf("switching to user %s (uid %u, gid %u)\n", user, uid, gid);
 
     if (set_user_privileges(user, uid, gid) < 0)
     {
@@ -172,8 +172,8 @@ int main(int argc, char** argv)
     if (cwd)
     {
         if (verbose)
-            printf("changing path to %s\n", cwd);
-            
+            printf("Changing path to %s\n", cwd);
+
         if (chdir(cwd) < 0)
         {
             perror("chdir");
